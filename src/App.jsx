@@ -7,23 +7,292 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  List, CheckCircle, XCircle, ArrowLeft, Play, 
-  RefreshCw, AlertCircle, BookOpen, ChevronRight,
-  BarChart3, Settings, Info, Check
+  CheckCircle, XCircle, AlertCircle, List, Play, 
+  RotateCcw, Check, BookOpen, ChevronRight, ArrowLeft 
 } from 'lucide-react';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, ScatterChart, Scatter, 
-  ZAxis, ReferenceLine, Cell
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 
-// --- Types & Data ---
+// --- 図表再現コンポーネント ---
+
+// Q2: 投資収益率の分布表
+const Q2Table = () => (
+  <div className="my-4 overflow-x-auto">
+    <table className="min-w-full text-sm border-collapse border border-slate-300">
+      <thead className="bg-blue-50">
+        <tr>
+          <th className="border border-slate-300 px-4 py-2">投資収益率</th>
+          <th className="border border-slate-300 px-4 py-2">確率</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="bg-white"><td className="border border-slate-300 px-4 py-2 text-center">4%</td><td className="border border-slate-300 px-4 py-2 text-center">0.2</td></tr>
+        <tr className="bg-white"><td className="border border-slate-300 px-4 py-2 text-center">6%</td><td className="border border-slate-300 px-4 py-2 text-center">0.5</td></tr>
+        <tr className="bg-white"><td className="border border-slate-300 px-4 py-2 text-center">8%</td><td className="border border-slate-300 px-4 py-2 text-center">0.3</td></tr>
+      </tbody>
+    </table>
+  </div>
+);
+
+// Q2: 計算式の再現
+const Q2Math = () => (
+  <div className="bg-slate-50 p-4 rounded-md font-mono text-xs md:text-sm my-2 space-y-2 border border-slate-200">
+    <p>期待値 = 4×0.2 + 6×0.5 + 8×0.3 = 6.2%</p>
+    <p>分散 = (4-6.2)²×0.2 + (6-6.2)²×0.5 + (8-6.2)²×0.3</p>
+    <p className="pl-8">= 4.84×0.2 + 0.04×0.5 + 3.24×0.3 = 1.96</p>
+    <p>標準偏差 = √1.96 = 1.4</p>
+  </div>
+);
+
+// Q4: 無差別曲線 (SVG)
+const IndifferenceCurves = () => (
+  <div className="flex flex-wrap justify-around gap-4 my-4">
+    {[
+      { label: 'A: リスク回避者', type: 'a' },
+      { label: 'B: リスク中立者', type: 'b' },
+      { label: 'C: リスク愛好者', type: 'c' }
+    ].map((g, idx) => (
+      <div key={idx} className="flex flex-col items-center">
+        <div className="w-40 h-40 border-l-2 border-b-2 border-slate-600 relative bg-white">
+          <span className="absolute -left-6 top-1/2 -rotate-90 text-xs">リターン</span>
+          <span className="absolute bottom-[-20px] left-1/2 -translate-x-1/2 text-xs">リスク</span>
+          {g.type === 'a' && (
+            <>
+              <path d="M10,90 Q40,80 90,10" stroke="red" strokeWidth="2" fill="none" className="absolute" style={{top:0, left:0, width:'100%', height:'100%'}} />
+              <path d="M10,70 Q40,60 70,10" stroke="red" strokeWidth="2" fill="none" className="absolute" style={{top:0, left:0, width:'100%', height:'100%'}} />
+            </>
+          )}
+          {g.type === 'b' && (
+            <>
+              <line x1="0" y1="30" x2="100" y2="30" stroke="red" strokeWidth="2" />
+              <line x1="0" y1="60" x2="100" y2="60" stroke="red" strokeWidth="2" />
+              <line x1="0" y1="90" x2="100" y2="90" stroke="red" strokeWidth="2" />
+            </>
+          )}
+          {g.type === 'c' && (
+            <>
+               <path d="M10,10 Q60,20 90,90" stroke="red" strokeWidth="2" fill="none" />
+               <path d="M30,10 Q70,20 95,70" stroke="red" strokeWidth="2" fill="none" />
+            </>
+          )}
+          {/* SVG Rendering using absolute div for simplicity in path mapping */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+             {g.type === 'a' && (
+               <>
+                 <path d="M10,130 Q50,120 130,20" stroke="red" strokeWidth="2" fill="none" />
+                 <path d="M10,100 Q50,90 100,20" stroke="red" strokeWidth="2" fill="none" />
+                 <path d="M10,70 Q40,60 70,20" stroke="red" strokeWidth="2" fill="none" />
+                 <text x="130" y="20" fontSize="10">U1</text>
+                 <text x="100" y="20" fontSize="10">U2</text>
+                 <text x="70" y="20" fontSize="10">U3</text>
+               </>
+             )}
+             {g.type === 'b' && (
+               <>
+                 <line x1="5" y1="40" x2="150" y2="40" stroke="red" strokeWidth="2" />
+                 <line x1="5" y1="80" x2="150" y2="80" stroke="red" strokeWidth="2" />
+                 <line x1="5" y1="120" x2="150" y2="120" stroke="red" strokeWidth="2" />
+                 <text x="152" y="45" fontSize="10">U3</text>
+                 <text x="152" y="85" fontSize="10">U2</text>
+                 <text x="152" y="125" fontSize="10">U1</text>
+               </>
+             )}
+             {g.type === 'c' && (
+               <>
+                 <path d="M10,20 Q100,30 140,140" stroke="red" strokeWidth="2" fill="none" />
+                 <path d="M10,50 Q80,60 110,140" stroke="red" strokeWidth="2" fill="none" />
+                 <text x="140" y="150" fontSize="10">U3</text>
+                 <text x="110" y="150" fontSize="10">U2</text>
+               </>
+             )}
+          </svg>
+        </div>
+        <span className="mt-2 text-sm font-bold">{g.label}</span>
+      </div>
+    ))}
+  </div>
+);
+
+// Q6, Q7, Q9, Q10, Q11: ポートフォリオと効率的フロンティア系グラフ
+const PortfolioGraph = ({ type }) => (
+  <div className="w-full max-w-md mx-auto h-64 border bg-white relative my-4 rounded shadow-sm">
+    <div className="absolute top-2 left-2 text-xs font-bold bg-white p-1 z-10">
+      {type === 'q6' && '◆ポートフォリオのリターンとリスク'}
+      {type === 'q7' && '◆相関係数とリスク'}
+      {type === 'q8' && '◆ポートフォリオの分散効果'}
+      {type === 'q9' && '◆効率的フロンティア'}
+      {type === 'q10' && '◆リスクフリー資産組込'}
+      {type === 'q11' && '◆リスクフリー資産と効率的フロンティア'}
+    </div>
+    
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} horizontal={false} />
+        <XAxis type="number" dataKey="x" domain={[0, 100]} tick={false} label={{ value: '標準偏差(リスク)', position: 'insideBottom', offset: -10 }} />
+        <YAxis type="number" domain={[0, 100]} tick={false} label={{ value: '期待収益率', angle: -90, position: 'insideLeft' }} />
+        
+        {/* Custom SVG Drawings based on type */}
+        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" fill="#ccc">
+          (SVG再現描画エリア)
+        </text>
+      </LineChart>
+    </ResponsiveContainer>
+
+    {/* Absolute SVG Overlay for complex curves not easily done with simple LineChart data */}
+    <svg className="absolute inset-0 w-full h-full pointer-events-none">
+       {/* Axes */}
+       <line x1="40" y1="230" x2="380" y2="230" stroke="black" strokeWidth="2" />
+       <line x1="40" y1="230" x2="40" y2="20" stroke="black" strokeWidth="2" />
+
+       {type === 'q6' && (
+         <>
+            {/* Backward bending curve */}
+            <path d="M280,200 Q100,150 280,50" stroke="#b91c1c" strokeWidth="3" fill="none" />
+            <circle cx="280" cy="50" r="4" fill="#1e3a8a" /> <text x="290" y="50" fontSize="12" fill="#1e3a8a">X:100%</text>
+            <circle cx="280" cy="200" r="4" fill="#1e3a8a" /> <text x="290" y="200" fontSize="12" fill="#1e3a8a">Y:100%</text>
+            <circle cx="155" cy="135" r="4" fill="#1e3a8a" /> <text x="60" y="135" fontSize="12" fill="#1e3a8a">X:37%, Y:63%</text>
+            {/* Dotted lines */}
+            <line x1="40" y1="50" x2="280" y2="50" stroke="black" strokeDasharray="4" /> <text x="20" y="50" fontSize="12">10</text>
+            <line x1="40" y1="135" x2="155" y2="135" stroke="black" strokeDasharray="4" /> <text x="10" y="135" fontSize="12">8.74</text>
+            <line x1="40" y1="200" x2="280" y2="200" stroke="black" strokeDasharray="4" /> <text x="25" y="200" fontSize="12">8</text>
+         </>
+       )}
+
+       {type === 'q7' && (
+         <>
+            <line x1="280" y1="50" x2="280" y2="200" stroke="#16a34a" strokeWidth="2" strokeDasharray="4" /> 
+            <text x="290" y="120" fontSize="12" fill="#16a34a" transform="rotate(-90, 290, 120)">相関係数=1</text>
+            
+            <path d="M280,200 Q150,150 280,50" stroke="#1e40af" strokeWidth="2" fill="none" />
+            <text x="180" y="100" fontSize="12" fill="#1e40af" transform="rotate(-60, 180, 100)">相関係数=0</text>
+
+            <polyline points="280,200 40,125 280,50" stroke="#b91c1c" strokeWidth="2" fill="none" />
+            <text x="100" y="80" fontSize="12" fill="#b91c1c" transform="rotate(-20, 100, 80)">相関係数=-1</text>
+         </>
+       )}
+
+      {type === 'q8' && (
+         <>
+           {/* Risk vs N graph */}
+           <path d="M40,20 Q60,150 380,180" stroke="#1e3a8a" strokeWidth="2" fill="none" />
+           <line x1="40" y1="180" x2="380" y2="180" stroke="gray" strokeDasharray="2" />
+           <text x="200" y="130" fontSize="12">A (分散可能)</text>
+           <text x="200" y="200" fontSize="12">B (市場リスク)</text>
+           <line x1="180" y1="100" x2="180" y2="180" markerEnd="url(#arrow)" stroke="black" />
+           <line x1="180" y1="180" x2="180" y2="230" stroke="black" />
+         </>
+       )}
+
+      {type === 'q9' && (
+         <>
+           <path d="M100,230 Q80,100 350,50" stroke="#b91c1c" strokeWidth="3" fill="none" />
+           <circle cx="200" cy="80" r="5" fill="red" /> <text x="210" y="80" fontSize="12" fill="red" fontWeight="bold">A</text>
+           <circle cx="200" cy="150" r="5" fill="red" /> <text x="210" y="150" fontSize="12" fill="red" fontWeight="bold">B</text>
+           <text x="180" y="40" fontSize="12" fill="#b91c1c" fontWeight="bold">効率的フロンティア</text>
+           {/* Dots for other portfolios */}
+           <circle cx="150" cy="180" r="3" fill="#1e3a8a" />
+           <circle cx="250" cy="100" r="3" fill="#1e3a8a" />
+           <circle cx="300" cy="120" r="3" fill="#1e3a8a" />
+         </>
+       )}
+
+      {type === 'q10' && (
+         <>
+           <line x1="40" y1="200" x2="350" y2="50" stroke="#4d7c0f" strokeWidth="2" />
+           <circle cx="40" cy="200" r="5" fill="#1e3a8a" /> <text x="50" y="200" fontSize="12">国債(100%)</text>
+           <circle cx="350" cy="50" r="5" fill="#1e3a8a" /> <text x="360" y="50" fontSize="12">X(100%)</text>
+           <circle cx="195" cy="125" r="5" fill="#1e3a8a" /> <text x="205" y="125" fontSize="12">X:50%</text>
+         </>
+       )}
+
+      {type === 'q11' && (
+         <>
+           <path d="M150,230 Q120,120 350,80" stroke="#b91c1c" strokeWidth="3" fill="none" />
+           <line x1="40" y1="180" x2="380" y2="50" stroke="#4d7c0f" strokeWidth="2" />
+           <circle cx="205" cy="118" r="5" fill="red" /> <text x="190" y="110" fontSize="12" fontWeight="bold">M</text>
+           <circle cx="160" cy="135" r="4" fill="#1e3a8a" /> <text x="150" y="130" fontSize="12" fontWeight="bold" fill="#1e3a8a">A</text>
+           <circle cx="165" cy="155" r="4" fill="#1e3a8a" /> <text x="175" y="160" fontSize="12" fontWeight="bold" fill="#1e3a8a">B</text>
+           <text x="300" y="60" fontSize="12" fill="#4d7c0f">資本市場線</text>
+           <text x="250" y="90" fontSize="12" fill="#b91c1c">効率的フロンティア</text>
+         </>
+       )}
+
+    </svg>
+  </div>
+);
+
+// Q14: 資金調達体系図 (Tree)
+const FundingTree = () => (
+  <div className="w-full overflow-x-auto my-4 p-4 border rounded bg-white">
+    <div className="flex flex-col gap-4 min-w-[500px] text-xs md:text-sm">
+      <div className="flex items-center">
+        <div className="border border-black p-2 w-24 text-center font-bold">資金調達</div>
+        <div className="w-8 border-t border-black"></div>
+        <div className="flex flex-col gap-8 border-l border-black pl-4 py-4">
+          
+          {/* 外部金融 */}
+          <div className="flex items-center">
+             <div className="border border-black bg-orange-100 p-2 w-24 text-center font-bold">外部金融</div>
+             <div className="w-4 border-t border-black"></div>
+             <div className="flex flex-col gap-4 border-l border-black pl-4">
+                <div className="flex items-center">
+                   <div className="border border-black p-1 w-20 text-center">企業間信用</div>
+                   <div className="w-4 border-t border-black"></div>
+                   <div className="flex flex-col gap-1 pl-2">
+                      <div className="border border-black p-1">支払手形</div>
+                      <div className="border border-black p-1">買掛金</div>
+                   </div>
+                </div>
+                <div className="flex items-center">
+                   <div className="border border-black bg-orange-200 p-1 w-20 text-center">間接金融</div>
+                   <div className="w-4 border-t border-black"></div>
+                   <div className="flex flex-col gap-1 pl-2">
+                      <div className="border border-black p-1">短期借入</div>
+                      <div className="border border-black p-1">長期借入</div>
+                   </div>
+                </div>
+                <div className="flex items-center">
+                   <div className="border border-black bg-orange-200 p-1 w-20 text-center">直接金融</div>
+                   <div className="w-4 border-t border-black"></div>
+                   <div className="flex flex-col gap-1 pl-2">
+                      <div className="border border-black p-1">社債</div>
+                      <div className="border border-black p-1">株式</div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          {/* 内部金融 */}
+          <div className="flex items-center">
+             <div className="border border-black bg-orange-100 p-2 w-24 text-center font-bold">内部金融</div>
+             <div className="w-4 border-t border-black"></div>
+             <div className="flex flex-col gap-2 border-l border-black pl-4 py-2">
+                <div className="flex items-center">
+                   <div className="border border-black p-1 w-20 text-center">自己金融</div>
+                   <div className="w-4 border-t border-black"></div>
+                   <div className="flex flex-col gap-1 pl-2">
+                      <div className="border border-black p-1">内部留保</div>
+                      <div className="border border-black p-1">減価償却</div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+
+// --- データ定義 ---
 
 const QUESTIONS = [
   {
     id: 1,
     title: "資本市場と資金調達",
-    text: "資本市場と資金調達に関する次の文中の空欄Ａ～Ｄに入る語句の組み合わせとして、最も適切なものを選べ。\n\n企業にとっての資金調達は、投資家にとっての（ Ａ ）となる。よって、企業の資金調達のコストである資本コストは、投資家にとっては（ Ａ ）に対する（ Ｂ ）となる。ここで、投資家が（ Ａ ）をするにあたり、資本市場において、（ Ｃ ）を購入するか（ Ｄ ）を購入するかの選択肢がある。リスクの少ない（ Ｃ ）と、リスクの大きい（ Ｄ ）の期待するリターンが同じであれば、投資家はリスクの少ない（ Ｃ ）を選ぶ。投資家はリスクが大きい投資に対しては、大きなリターンを望むからである。",
+    question: "資本市場と資金調達に関する次の文中の空欄Ａ～Ｄに入る語句の組み合わせとして、最も適切なものを下記の解答群から選べ。\n\n企業にとっての資金調達は、投資家にとっての（　Ａ　）となる。よって、企業の資金調達のコストである資本コストは、投資家にとっては（　Ａ　）に対する（　Ｂ　）となる。ここで、投資家が（　Ａ　）をするにあたり、資本市場において、（　Ｃ　）を購入するか（　Ｄ　）を購入するかの選択肢がある。リスクの少ない（　Ｃ　）と、リスクの大きい（　Ｄ　）の期待するリターンが同じであれば、投資家はリスクの少ない（　Ｃ　）を選ぶ。投資家はリスクが大きい投資に対しては、大きなリターンを望むからである。",
     choices: [
       "Ａ：投資　Ｂ：リスク　Ｃ：社債　Ｄ：株式",
       "Ａ：消費　Ｂ：リスク　Ｃ：株式　Ｄ：社債",
@@ -31,44 +300,36 @@ const QUESTIONS = [
       "Ａ：投資　Ｂ：リターン　Ｃ：株式　Ｄ：社債",
       "Ａ：投資　Ｂ：リターン　Ｃ：社債　Ｄ：株式"
     ],
-    answer: 4, // インデックス（オ）
-    explanation: "企業にとっての資金調達は投資家にとっての投資であり、そのコスト（資本コスト）は投資家側のリターンに対応します。また、社債は元本・利息が比較的確実（低リスク）ですが、株式は業績により配当や価格が変動する（高リスク）という特徴があります。",
-    points: ["資金調達 ＝ 投資", "資本コスト ＝ リターン", "社債（低リスク） vs 株式（高リスク）"]
+    answer: 4,
+    explanation: "企業にとっての資金調達は投資家にとっての「投資(A)」であり、資本コストは投資家にとっての「リターン(B)」となります。\nまた、一般的に「社債(C)」は元本保証性が高くリスクが低いのに対し、「株式(D)」は価格変動リスクが大きいためリスクが高いとされます。リスク回避的な投資家は、同じリターンならリスクの少ない社債を選びます。"
   },
   {
     id: 2,
-    title: "投資のリスクとリターン（標準偏差）",
-    text: "次の資料は、ある株式の投資収益率について予想される分布を示したものである。この資料に基づいた場合、この株式の標準偏差として、最も適切なものを選べ。",
-    hasTable: true,
-    tableData: [
-      { rate: "4%", prob: "0.2" },
-      { rate: "6%", prob: "0.5" },
-      { rate: "8%", prob: "0.3" }
-    ],
-    mathInfo: "※計算式：\n期待値 = 4*0.2 + 6*0.5 + 8*0.3 = 6.2%\n分散 = (4-6.2)^2 * 0.2 + (6-6.2)^2 * 0.5 + (8-6.2)^2 * 0.3 = 1.96\n標準偏差 = √1.96 = 1.4",
+    title: "投資のリスクとリターン",
+    question: "次の資料は、ある株式の投資収益率について予想される分布を示したものである。この株式の標準偏差として、最も適切なものを下記の解答群から選べ。",
     choices: ["-1", "0", "1", "1.41", "1.4"],
     answer: 4,
-    explanation: "期待値は $4\\% \\times 0.2 + 6\\% \\times 0.5 + 8\\% \\times 0.3 = 6.2\\%$ です。次に各値の偏差の2乗に確率を掛けて分散を求めると $(4-6.2)^2 \\times 0.2 + (6-6.2)^2 \\times 0.5 + (8-6.2)^2 \\times 0.3 = 1.96$ となります。標準偏差はその平方根なので $\\sqrt{1.96} = 1.4$ となります。"
+    explanation: "まず期待値を計算します。\n4%×0.2 + 6%×0.5 + 8%×0.3 = 6.2%\n次に分散を求めます。\n(4-6.2)²×0.2 + (6-6.2)²×0.5 + (8-6.2)²×0.3 = 1.96\n標準偏差は分散の平方根なので、√1.96 = 1.4 となります。",
+    extraComponent: <><Q2Table /><Q2Math /></>
   },
   {
     id: 3,
     title: "リスクの種類",
-    text: "ポートフォリオ理論におけるリスクに関する記述として、最も適切なものを選べ。",
+    question: "ポートフォリオ理論におけるリスクに関する記述として、最も適切なものを下記の解答群から選べ。",
     choices: [
-      "流動性リスクとは、取引相手の財務状況の悪化や倒産により元本の回収が滞るリスクのことである。",
-      "カントリー・リスクとは、外貨建て金融商品における為替変動により資産価値が変動するリスクのことである。",
-      "価格変動リスクとは、取引量が少ないためすぐに希望価格で売ることができなくなるリスクのことである。",
+      "流動性リスクとは、取引相手の財務状況の悪化や倒産により貸付金の受取利息や元本の回収が滞ってしまうリスクのことである。",
+      "カントリー・リスクとは、外貨建て金融商品における国と国との為替変動により資産価値が変動するリスクのことである。",
+      "価格変動リスクとは、市場で取引量が少ないために資産を換金しようとしたときにすぐに売ることができない、あるいは希望する価格で売ることができなくなるリスクのことである。",
       "信用リスクとは、その国の政治や経済などによって資産価値が変動するリスクのことである。",
-      "システマティック・リスクとは、市場全体との相関によるリスクであり、分散化によって消去することができない。"
+      "システマティック・リスクとは、市場全体との相関によるリスクであり、分散化によって消去することができないリスクのことである。"
     ],
     answer: 4,
-    explanation: "消去可能なリスクは「アンシステマティック・リスク（個別リスク）」であり、市場全体に起因する「システマティック・リスク」は分散投資でも消去できません。他の選択肢は定義が入れ替わっています（流動性⇔価格変動、信用⇔カントリー等）。"
+    explanation: "システマティック・リスク（市場リスク）は、市場全体に起因するリスク（景気変動、金利変動など）であり、分散投資を行っても消去できません。対して、個別銘柄固有のリスクをアンシステマティック・リスクと呼び、こちらは分散投資で低減可能です。\n他の選択肢の誤り：\n・ア：信用リスクの説明です。\n・イ：為替リスクの説明です。\n・ウ：流動性リスクの説明です。\n・エ：カントリーリスクの説明です。"
   },
   {
     id: 4,
     title: "リスクに対する投資家の選好",
-    text: "図は投資家の無差別曲線を描いたものである。A, B, Cの投資家の選好を表す組み合わせとして適切なものを選べ。※U1 < U2 < U3",
-    customVisual: "indifference_curves",
+    question: "次の図は、投資家の無差別曲線を描いたものである。この投資家の選好を表す組み合わせとして、最も適切なものはどれか。ただし、図において、満足度のレベルは、U1＜U2＜U3である。",
     choices: [
       "Ａ：リスク回避者　Ｂ：リスク中立者　Ｃ：リスク愛好者",
       "Ａ：リスク回避者　Ｂ：リスク愛好者　Ｃ：リスク中立者",
@@ -76,12 +337,13 @@ const QUESTIONS = [
       "Ａ：リスク愛好者　Ｂ：リスク回避者　Ｃ：リスク中立者"
     ],
     answer: 0,
-    explanation: "ファイナンスでは一般に「リスク回避者」を想定します。同じリターンなら低リスクを好むのが回避者(A)、リスクを気にせずリターンのみ見るのが中立者(B)、同じリターンなら高リスクのスリルを好むのが愛好者(C)です。"
+    explanation: "Aは、同じリターンならリスクが小さい方を好む「リスク回避者」の無差別曲線（下に凸の右上がり）。\nBは、リスクの大きさに関わらずリターンのみで判断する「リスク中立者」（水平線）。\nCは、同じリターンならリスクが大きい方を好む「リスク愛好者」（右下がり、または上に凸）。\nよって、アが正解です。",
+    extraComponent: <IndifferenceCurves />
   },
   {
     id: 5,
     title: "ポートフォリオのリスク低減効果",
-    text: "次の文中の空欄に入る語句を選べ。\n\n（ Ａ ）とは、複数の資産を組み合わせてつくられた資産全体のことをいう。マコービッツは個々の証券の（ Ｂ ）とその組み合わせである（ Ａ ）の（ Ｂ ）を区別して調べることにより、（ Ａ ）を組むことによって（ Ｂ ）の（ Ｃ ）が可能になることを提唱した。資産が（ Ｃ ）化された（ Ａ ）のほうが（ Ｂ ）は小さくなることを、（ Ａ ）の（ Ｄ ）という。",
+    question: "ポートフォリオのリスク低減効果に関する次の文中の空欄Ａ～Ｄに入る語句の組み合わせとして、最も適切なものを下記の解答群から選べ。\n\n（　Ａ　）とは、複数の資産を組み合わせてつくられた資産全体のことをいう。マコービッツは個々の証券の（　Ｂ　）とその組み合わせである（　Ａ　）の（　Ｂ　）を区別して調べることにより、（　Ａ　）を組むことによって（　Ｂ　）の（　Ｃ　）が可能になることを提唱した。個別の証券に集中して投資する（　Ｂ　）よりも、資産が（　Ｃ　）化された（　Ａ　）のほうが（　Ｂ　）は小さくなることを、（　Ａ　）の（　Ｄ　）という。",
     choices: [
       "Ａ：ポートフォリオ　Ｂ：リスク　Ｃ：分散　Ｄ：リスク低減効果",
       "Ａ：ポートフォリオ　Ｂ：リターン　Ｃ：集中　Ｄ：ポートフォリオ効果",
@@ -89,151 +351,151 @@ const QUESTIONS = [
       "Ａ：投資家の選好　Ｂ：リスク　Ｃ：集中　Ｄ：ポートフォリオ効果"
     ],
     answer: 0,
-    explanation: "ハリー・マコービッツが提唱した理論です。個別銘柄に集中するより、分散投資（ポートフォリオ）を行うことで、期待収益率を維持しながらリスクだけを下げられる効果を指します。"
+    explanation: "ポートフォリオ理論の基礎知識です。複数の資産（ポートフォリオ）に分散投資することで、期待リターンを維持したままリスクを低減できる効果を「ポートフォリオのリスク低減効果（分散効果）」といいます。"
   },
   {
     id: 6,
-    title: "ポートフォリオのリターンとリスク（グラフ読解）",
-    text: "2つの株式XとYの組み入れ比率を変化させたときのリターンとリスクの図に関する記述として、最も適切なものを選べ。",
-    customVisual: "portfolio_curve",
+    title: "ポートフォリオのリターンとリスク",
+    question: "次の図は、2つの株式XとYについて、ポートフォリオの組み入れ比率を変化させて、縦軸に期待収益率を横軸に標準偏差をとったポートフォリオのリターンとリスクを示したものである。この図に関する記述として、最も適切なものを下記の解答群から選べ。",
     choices: [
-      "株式Xにだけ単独に投資するのは、ローリスク・ローリターンの投資家行動といえる。",
-      "株式Yにだけ単独に投資するのは、ハイリスク・ハイリターンの投資家行動といえる。",
+      "株式Xにだけ単独に投資するというのは、ローリスク・ローリターンの投資家行動といえる。",
+      "株式Yにだけ単独に投資するというのは、ハイリスク・ハイリターンの投資家行動といえる。",
       "リスクが最も小さくなるのは、組み入れ比率が株式X37%・株式Y63％であるときである。",
-      "X37%・Y63％以外の比率の場合、個別証券に集中投資する場合に比べてリスクは高い。"
+      "組み入れ比率が株式X37%・株式Y63％であるとき以外の組み入れ比率の場合、個別の証券に集中して投資する場合に比べて、リスクは高い。"
     ],
     answer: 2,
-    explanation: "図の曲線の一番左端（標準偏差が最小の点）が X:37%, Y:63% の地点です。この点は個別株（Xのみ、Yのみ）よりもリスクが小さくなっており、分散投資の効果が表れています。"
+    explanation: "図より、グラフの最も左側（標準偏差が最小）になる点が、X:37%, Y:63%のポイントです。この点は単独投資（Xのみ、Yのみ）よりもリスクが小さくなっており、分散投資の効果が表れています。",
+    extraComponent: <PortfolioGraph type="q6" />
   },
   {
     id: 7,
     title: "相関係数とリスク",
-    text: "相関係数が－1、0、1の場合における、リターンとリスクの図に関する記述として、最も適切なものを選べ。",
-    customVisual: "correlation_graph",
+    question: "次の図は、相関係数が－1、0、1の場合における、2つの株式XとYについて、ポートフォリオの組み入れ比率を変化させた図である。この図に関する記述として、最も適切なものを下記の解答群から選べ。",
     choices: [
       "相関係数が－1のとき、ポートフォリオのリスク低減効果は最も小さくなる。",
-      "相関係数が 1 のとき、ポートフォリオのリスク低減効果は最も大きくなる。",
-      "相関係数が 0 のとき、ポートフォリオのリスクを低減することができない。",
-      "相関係数が 1 以外のとき、ポートフォリオのリスク低減効果がある。"
+      "相関係数が1のとき、ポートフォリオのリスク低減効果は最も大きくなる。",
+      "相関係数が0のとき、ポートフォリオのリスクを低減することができない。",
+      "相関係数が1以外のとき、ポートフォリオのリスク低減効果がある。"
     ],
     answer: 3,
-    explanation: "相関係数が1（完全に同じ動き）でない限り、多角化によるリスク低減効果は発生します。-1（完全に逆の動き）のとき、リスク低減効果は最大（リスクを0にできる）となります。"
+    explanation: "相関係数が1（完全正相関）の場合、分散効果はゼロとなり直線になります。それ以外（1未満）であればリスク低減効果が生じ、グラフは左側に膨らみます。特に-1（完全逆相関）のときはリスクをゼロにできる点が存在します。",
+    extraComponent: <PortfolioGraph type="q7" />
   },
   {
     id: 8,
     title: "システマティックリスクと非システマティックリスク",
-    text: "ポートフォリオのリスクとリターンについて、空欄Ａ～Ｃに入る語句の組み合わせを選べ。\n\nポートフォリオの総リスクは、（ Ａ ）と（ Ｂ ）から構成される。（ Ａ ）は、銘柄数が多くなると減少するが（ Ｂ ）は、減少することはない。（ Ｃ ）は、横軸にベータ、縦軸に期待リターンをとったときに、CAPMにおけるベータと期待リターンの関係を表した直線である。",
-    customVisual: "risk_distribution",
+    question: "次の文章は、ポートフォリオのリスクとリターン、分散効果について述べたものである。空欄Ａ～Ｃに入る語句の組み合わせとして、最も適切なものはどれか。\n\nポートフォリオの総リスクは、（　Ａ　）と（　Ｂ　）から構成される。\n（　Ａ　）は、ポートフォリオを構成する銘柄数が多くなると減少するが（　Ｂ　）は、減少することはない。…（　Ｃ　）は、横軸にベータ、縦軸に期待リターンをとったときに、CAPMにおけるベータと期待リターンの関係を表した直線です。",
     choices: [
-      "Ａ：システマティック　Ｂ：アンシステマティック　Ｃ：資本市場線",
-      "Ａ：システマティック　Ｂ：アンシステマティック　Ｃ：証券市場線",
-      "Ａ：アンシステマティック　Ｂ：システマティック　Ｃ：証券市場線",
-      "Ａ：アンシステマティック　Ｂ：システマティック　Ｃ：資本市場線"
+      "Ａ：システマティック・リスク　Ｂ：アンシステマティック・リスク　Ｃ：資本市場線",
+      "Ａ：システマティック・リスク　Ｂ：アンシステマティック・リスク　Ｃ：証券市場線",
+      "Ａ：アンシステマティック・リスク　Ｂ：システマティック・リスク　Ｃ：証券市場線",
+      "Ａ：アンシステマティック・リスク　Ｂ：システマティック・リスク　Ｃ：資本市場線"
     ],
     answer: 2,
-    explanation: "個別銘柄固有のリスク（アンシステマティック）は分散投資で消せますが、市場全体のリスク（システマティック）は消せません。また、βと期待リターンの関係を示すのは「証券市場線(SML)」です。"
+    explanation: "分散投資で減らせるリスク(A)は「アンシステマティック・リスク（個別リスク）」です。減らせない市場全体のリスク(B)は「システマティック・リスク」です。また、βと期待リターンの関係を表す直線(C)は「証券市場線(SML)」です。（資本市場線は標準偏差とリターンの関係）",
+    extraComponent: <PortfolioGraph type="q8" />
   },
   {
     id: 9,
     title: "効率的フロンティア",
-    text: "リターンとリスクの分布を示した図に関する記述として、最も不適切なものを選べ。",
-    customVisual: "efficient_frontier",
+    question: "次の図に関する記述として、最も不適切なものを下記の解答群から選べ。",
     choices: [
-      "効率的フロンティアとは、特定のリスクに対して最低のリターンをあげることが期待されるポートフォリオをいう。",
-      "合理的な投資家は、ポートフォリオB（曲線内部）よりA（曲線上）を選ぶ。",
-      "ローリスク・ローリターンを好む投資家は、効率的フロンティアの左側の線上を選ぶ。",
-      "ハイリスク・ハイリターンを好む投資家は、効率的フロンティアの右側の線上を選ぶ。"
+      "効率的フロンティアとは、特定のリスクの大きさに対して、最低のリターンをあげることが期待されるポートフォリオのことをいう。",
+      "ポートフォリオAとポートフォリオBを比較してみると、合理的な投資家は必ず効率的フロンティアの上にあるAを選ぶ。",
+      "ローリスク・ローリターンを好む投資家は、効率的フロンティアの左側の線上のポートフォリオを選ぶ。",
+      "ハイリスク・ハイリターンを好む投資家は、効率的フロンティアの右側の線上のポートフォリオを選ぶ。"
     ],
     answer: 0,
-    explanation: "「最低のリターン」ではなく「最高のリターン」です。同じリスクならリターンが高い方が良いため、境界線（フロンティア）上の組み合わせが選ばれます。"
+    explanation: "効率的フロンティアとは、特定のリスクに対して「最高」のリターン（または特定のリターンに対して「最低」のリスク）を実現するポートフォリオの集合です。「最低のリターン」という記述が誤り（不適切）です。",
+    extraComponent: <PortfolioGraph type="q9" />
   },
   {
     id: 10,
     title: "リスクフリー資産",
-    text: "株式Xと国債（リスクフリー資産）を組み合わせた図に関する記述として、最も適切なものを選べ。",
-    customVisual: "risk_free_graph",
+    question: "次の図は、株式Xと国債をポートフォリオに組み込んだ場合におけるリターンとリスクの分布を示したものである。この図に関する記述として、最も適切なものを下記の解答群から選べ。",
     choices: [
       "国債の期待収益率は、10％である。",
-      "国債は、リスクフリー資産である（標準偏差が0）。",
+      "国債は、リスクフリー資産である。",
       "国債を購入する比率が低くなるほど、リスクは小さくなる。",
-      "リスクフリー資産を入れると、リスクを嫌う投資家は選択肢が狭まる。"
+      "国債をポートフォリオに入れると、株式だけのポートフォリオよりも、リスクを嫌う投資家は、よりリスクの低いポートフォリオを選択できなくなる。"
     ],
     answer: 1,
-    explanation: "図の縦軸（標準偏差0）にある点が国債です。収益率は確定しており、リスク（ばらつき）がないため、標準偏差は0となります。"
+    explanation: "グラフの縦軸切片（標準偏差0）が国債単独の点です。標準偏差が0なのでリスクフリー資産です。\n他の選択肢：\nア：国債の収益率はグラフより2%です。\nウ：国債比率が低い＝株式比率が高いので、リスクは大きくなります。\nエ：国債を組み入れることで、より低リスクな選択が可能になります。",
+    extraComponent: <PortfolioGraph type="q10" />
   },
   {
     id: 11,
     title: "市場ポートフォリオ",
-    text: "リスクフリー資産と全株式を組み合わせた場合の図に関する記述として、最も適切なものを選べ。",
-    customVisual: "market_portfolio_graph",
+    question: "次の図は、リスクフリー資産である国債と、全ての株式を自由に組み合わせた場合におけるリターンとリスクの分布を示したものである。この図に関する記述として、最も適切なものを下記の解答群から選べ。",
     choices: [
-      "資本市場線とは、リスクフリー資産だけを購入した場合を示すものである。",
+      "資本市場線とは、資本市場において、リスクフリー資産だけを購入した場合を示すものである。",
       "A点とB点を比較すると、B点の方が同じリスクで高いリターンを実現できる。",
       "合理的な投資家は、必ず資本市場線の上のポートフォリオを選択する。",
       "市場ポートフォリオの有するリスクは、すべてのポートフォリオの中で最小である。"
     ],
     answer: 2,
-    explanation: "リスクフリー資産を含める場合、効率的フロンティアとの接点を通る直線「資本市場線」が最も効率的になります。投資家は自身の許容リスクに応じ、この直線上のどこかの点を選択します。"
+    explanation: "資本市場線（CML）は、リスクフリー資産と市場ポートフォリオを結んだ直線で、最も効率的な投資機会の集合です。合理的な投資家はこの線上の点を選択します。\nA点（CML上）はB点（効率的フロンティア内部）より上にあるため、同じリスクでより高いリターンを得られます。",
+    extraComponent: <PortfolioGraph type="q11" />
   },
   {
     id: 12,
-    title: "CAPMによる期待収益率の計算",
-    text: "次の資料に基づいた場合、CAPMによりG証券の期待収益率を計算する数式として最も適切なものを選べ。\n\n資料：リスクフリーレート 2%, β値 1.2, 市場ポートフォリオの期待収益率 8%",
+    title: "CAPM",
+    question: "次の資料に基づいた場合、CAPMによりG証券の期待収益率を計算する数式として、最も適切なものを下記の解答群から選べ。\n【資料】リスクフリーレート:2%、β値:1.2、市場ポートフォリオの期待収益率:8%",
     choices: [
-      "8% + 1.2 × (8% - 2%)",
-      "8% - 1.2 × (8% + 2%)",
-      "2% + 1.2 × (8% + 2%)",
-      "2% - 1.2 × (8% - 2%)",
-      "2% + 1.2 × (8% - 2%)"
+      "8％ ＋ 1.2 × (8％ － 2％)",
+      "8％ － 1.2 × (8％ ＋ 2％)",
+      "2％ ＋ 1.2 × (8％ ＋ 2％)",
+      "2％ － 1.2 × (8％ － 2％)",
+      "2％ ＋ 1.2 × (8％ － 2％)"
     ],
     answer: 4,
-    explanation: "CAPM式：個別期待収益率 = 無リスク利子率 + β × (市場収益率 - 無リスク利子率)。当てはめると $2 + 1.2 \\times (8 - 2)$ となり、結果は $9.2\\%$ です。"
+    explanation: "CAPMの公式：期待収益率 = リスクフリーレート + β × (市場期待収益率 - リスクフリーレート)\nこれに数値を当てはめると、2% + 1.2 × (8% - 2%) となります。",
   },
   {
     id: 13,
-    title: "加重平均資本コスト(WACC)",
-    text: "H社の資料に基づき、WACCを計算する数式を選べ。\n\n【資料】社債(時価400万/コスト3%)、普通株式(時価600万/コスト13%)、実効税率40%",
+    title: "加重平均資本コスト",
+    question: "次の資料に基づいた場合、H社の加重平均資本コスト(WACC)を計算する数式として、最も適切なものを下記の解答群から選べ。\n【資料】\n社債: 帳簿400万/時価400万, コスト3%\n普通株式: 帳簿400万/時価600万, コスト13%\n実効税率: 40%",
     choices: [
-      "0.5 × (1 - 0.4) × 3% + 0.5 × 13%",
-      "0.5 × 0.4 × 3% + 0.5 × 13%",
-      "0.4 × 3% + 0.6 × 13%",
-      "0.4 × (1 - 0.4) × 3% + 0.6 × 13%",
-      "0.4 × 0.4 × 3% + 0.6 × 13%"
+      "0.5 × (1 － 0.4) × 3％ ＋ 0.5 × 13％",
+      "0.5 × 0.4 × 3％ ＋ 0.5 × 13％",
+      "0.4 × 3％ ＋ 0.6 × 13％",
+      "0.4 × (1 － 0.4) × 3％ ＋ 0.6 × 13％",
+      "0.4 × 0.4 × 3％ ＋ 0.6 × 13％"
     ],
     answer: 3,
-    explanation: "時価ベースで重みを算出します。総額1000万のうち負債40%(0.4)、資本60%(0.6)。負債コストには節税効果(1-税率)を掛けるため、$0.4 \\times (1-0.4) \\times 3\\% + 0.6 \\times 13\\%$ となります。"
+    explanation: "WACC計算では「時価」を用います。\n負債時価=400万, 株式時価=600万, 合計1000万。\n負債比率 = 400/1000 = 0.4\n株式比率 = 600/1000 = 0.6\n負債コストには節税効果(1-税率)を考慮します。\n式：0.4 × (1 - 0.4) × 3% + 0.6 × 13%",
   },
   {
     id: 14,
     title: "資金調達方法",
-    text: "資金調達方法に関する説明として、最も適切なものはどれか。",
-    customVisual: "funding_hierarchy",
+    question: "資金調達方法に関する説明として、最も適切なものはどれか。",
     choices: [
       "内部留保と減価償却費は、内部金融に該当する。",
       "内部金融とは、企業外部から資金調達を行うことである。",
       "直接金融とは、金融仲介機関から直接的に資金を融通することである。",
-      "間接金融とは、金融仲介機関を経由せずに資金を融通することである。"
+      "間接金融とは、金融仲介機関を経由せずに、間接的に資金を融通することである。"
     ],
     answer: 0,
-    explanation: "内部金融（自己金融）には、利益を貯めた「内部留保」や、キャッシュアウトを伴わない費用である「減価償却費」が含まれます。銀行借入は「間接金融」、株・債券発行は「直接金融」です。"
+    explanation: "資金調達の分類です。\n・内部金融＝内部留保、減価償却費（自己金融）\n・外部金融＝借入（間接金融）、社債・株式発行（直接金融）\n銀行等を通すのが間接金融、市場から直接調達するのが直接金融です。",
+    extraComponent: <FundingTree />
   },
   {
     id: 15,
     title: "ファイナンス・リース取引",
-    text: "ファイナンス・リース取引に関する説明として、最も適切なものはどれか。",
+    question: "ファイナンス・リース取引に関する説明として、最も適切なものはどれか。",
     choices: [
-      "途中解約不能（ノンキャンセラブル）かつ、借手がコストを実質負担（フルペイアウト）する取引をいう。",
-      "途中解約が可能で、借手が使用に伴うコストを負担しなくてよい取引をいう。",
-      "通常の賃貸借取引（レンタル等）に係る方法に準じて会計処理を行う。",
+      "中途解約不能（ノンキャンセラブル）かつ、コストを実質負担（フルペイアウト）する取引をいう。",
+      "中途解約可能で、コストを実質負担しなくてもよい取引をいう。",
+      "通常の賃貸借取引に係る方法に準じて会計処理を行う。",
       "通常の資本取引に係る方法に準じて会計処理を行う。"
     ],
     answer: 0,
-    explanation: "ファイナンス・リースは「実質的な割賦購入」とみなされるため、解約不能・フルペイアウトが特徴です。会計処理は「売買取引」に準じて行われ、資産・負債に計上されます。"
+    explanation: "ファイナンス・リースの定義は「ノンキャンセラブル（解約不能）」かつ「フルペイアウト（コスト負担）」です。会計処理は「売買取引」に準じて行います（資産計上）。",
   },
   {
     id: 16,
     title: "効率的市場仮説",
-    text: "効率的市場仮説の空欄Ａ～Dに入る語句を選べ。\n\n（ Ａ ）では、テクニカル分析の有効性が否定されている。（ Ｂ ）では、株価予測は不可能とされる。インサイダー情報も織り込み済みとする説は（ Ｃ ）である。一方、（ Ｄ ）ではファンダメンタル分析の有効性が否定されている。",
+    question: "次の文章の空欄Ａ～Dに入る語句の組み合わせとして、最も適切なものはどれか。\n（　Ａ　）では、チャート分析などテクニカル分析の有効性が否定されている。（　Ｂ　）では、株価が上昇するか下落するかは五分五分の可能性…。（　Ｃ　）はインサイダー情報を利用しても予測できないとする説。（　Ｄ　）ではファンダメンタル分析の有効性が否定されている。",
     choices: [
       "Ａ：ストロング　Ｂ：ウィーク　Ｃ：ランダムウォーク　Ｄ：セミストロング",
       "Ａ：ウィーク　Ｂ：ランダムウォーク　Ｃ：ストロング　Ｄ：セミストロング",
@@ -241,490 +503,309 @@ const QUESTIONS = [
       "Ａ：ランダムウォーク　Ｂ：ウィーク　Ｃ：ストロング　Ｄ：セミストロング"
     ],
     answer: 1,
-    explanation: "過去の価格情報(ウィーク) < 公開情報(セミストロング) < 全情報(ストロング) の順に強くなります。ランダムウォークは「将来の予測は五分五分で不可能」という考え方です。"
+    explanation: "・ウィーク型：過去のデータ（テクニカル）は無効。\n・セミストロング型：公開情報（ファンダメンタルズ）は無効。\n・ストロング型：全情報（インサイダー含む）が無効。\n・ランダムウォーク：予測不可能。",
   }
 ];
 
-// --- Sub Components (Visual Recreations) ---
-
-const IndifferenceCurves = () => (
-  <div className="w-full h-48 bg-white border rounded-lg p-2 flex flex-col">
-    <span className="text-xs font-bold self-center mb-1">リスクに対する投資家の選好</span>
-    <div className="flex-1 flex justify-around items-end pb-6 relative">
-      <div className="text-[10px] absolute bottom-0 left-0">リスク</div>
-      <div className="text-[10px] absolute top-0 left-0 rotate-[-90deg] translate-x-[-15px] translate-y-[20px]">リターン</div>
-      {/* A: Risk Averse */}
-      <div className="flex flex-col items-center">
-        <svg width="80" height="80" viewBox="0 0 100 100">
-          <path d="M10,90 Q15,40 90,10" fill="none" stroke="#ef4444" strokeWidth="2" />
-          <path d="M10,95 Q30,60 95,30" fill="none" stroke="#ef4444" strokeWidth="2" opacity="0.6"/>
-          <path d="M10,100 Q45,80 100,50" fill="none" stroke="#ef4444" strokeWidth="2" opacity="0.3"/>
-          <text x="75" y="15" fontSize="12" fill="#ef4444">A</text>
-        </svg>
-        <span className="text-[10px]">リスク回避</span>
-      </div>
-      {/* B: Neutral */}
-      <div className="flex flex-col items-center">
-        <svg width="80" height="80" viewBox="0 0 100 100">
-          <line x1="10" y1="20" x2="90" y2="20" stroke="#3b82f6" strokeWidth="2" />
-          <line x1="10" y1="45" x2="90" y2="45" stroke="#3b82f6" strokeWidth="2" opacity="0.6"/>
-          <line x1="10" y1="70" x2="90" y2="70" stroke="#3b82f6" strokeWidth="2" opacity="0.3"/>
-          <text x="80" y="15" fontSize="12" fill="#3b82f6">B</text>
-        </svg>
-        <span className="text-[10px]">リスク中立</span>
-      </div>
-      {/* C: Lover */}
-      <div className="flex flex-col items-center">
-        <svg width="80" height="80" viewBox="0 0 100 100">
-          <path d="M10,10 Q60,15 90,90" fill="none" stroke="#22c55e" strokeWidth="2" />
-          <path d="M10,30 Q40,35 70,95" fill="none" stroke="#22c55e" strokeWidth="2" opacity="0.6"/>
-          <path d="M10,50 Q20,55 50,100" fill="none" stroke="#22c55e" strokeWidth="2" opacity="0.3"/>
-          <text x="15" y="25" fontSize="12" fill="#22c55e">C</text>
-        </svg>
-        <span className="text-[10px]">リスク愛好</span>
-      </div>
-    </div>
-  </div>
-);
-
-const PortfolioCurve = () => {
-  const data = useMemo(() => {
-    const points = [];
-    for (let i = 0; i <= 100; i += 5) {
-      const xRatio = i / 100;
-      const yRatio = 1 - xRatio;
-      const expectedReturn = xRatio * 10 + yRatio * 8;
-      // Simplified portfolio risk curve calculation for visual
-      const stdDev = Math.sqrt(Math.pow(xRatio * 8.12, 2) + Math.pow(yRatio * 4.65, 2) + 2 * xRatio * yRatio * 8.12 * 4.65 * 0.1);
-      points.push({ stdDev: stdDev.toFixed(2), ret: expectedReturn.toFixed(2), ratio: i });
-    }
-    return points;
-  }, []);
-
-  return (
-    <div className="w-full h-64 bg-white border rounded-lg p-2">
-       <span className="text-xs font-bold block mb-2">◆ ポートフォリオのリターンとリスク</span>
-       <ResponsiveContainer width="100%" height="90%">
-        <ScatterChart margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" dataKey="stdDev" name="標準偏差" unit="" label={{ value: 'リスク(標準偏差)', position: 'insideBottom', offset: -10, fontSize: 10 }} />
-          <YAxis type="number" dataKey="ret" name="期待収益率" unit="%" label={{ value: '期待収益率', angle: -90, position: 'insideLeft', fontSize: 10 }} />
-          <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-          <Scatter name="ポートフォリオ" data={data} fill="#8884d8" line={{ stroke: '#ef4444', strokeWidth: 2 }} shape="none" />
-          {/* Key Points */}
-          <ReferenceLine x={1.02} stroke="blue" strokeDasharray="3 3" />
-          <Scatter data={[{ stdDev: 8.12, ret: 10, label: 'X:100%' }, { stdDev: 4.65, ret: 8, label: 'Y:100%' }, { stdDev: 1.02, ret: 8.74, label: 'Min' }]} fill="#1e3a8a">
-            {({ points }) => points.map((p, i) => (
-               <g key={i}>
-                 <circle cx={p.x} cy={p.y} r={4} fill="#1e3a8a" />
-                 <text x={p.x + 5} y={p.y - 5} fontSize="10">{i === 2 ? '最小リスク点(X37%)' : ''}</text>
-               </g>
-            ))}
-          </Scatter>
-        </ScatterChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
-
-const FundingHierarchy = () => (
-  <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-xl text-[10px] md:text-xs">
-    <div className="flex flex-col items-center space-y-4">
-      <div className="p-2 border-2 border-slate-800 bg-white font-bold">資金調達</div>
-      <div className="flex w-full justify-around relative">
-        <div className="flex flex-col items-center space-y-2">
-          <div className="p-1 bg-blue-600 text-white rounded">外部金融</div>
-          <div className="flex space-x-2">
-             <div className="p-1 border bg-white">間接金融 (銀行等)</div>
-             <div className="p-1 border bg-white">直接金融 (株・債券)</div>
-          </div>
-          <div className="mt-1 p-1 bg-slate-200">他人資本</div>
-        </div>
-        <div className="flex flex-col items-center space-y-2">
-          <div className="p-1 bg-green-600 text-white rounded">内部金融</div>
-          <div className="flex space-x-2">
-             <div className="p-1 border bg-white">内部留保</div>
-             <div className="p-1 border bg-white">減価償却</div>
-          </div>
-          <div className="mt-1 p-1 bg-slate-200">自己資本</div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-// --- Main Application ---
+// --- アプリ本体 ---
 
 export default function App() {
-  const [view, setView] = useState('dashboard'); // dashboard, quiz, explanation
-  const [filter, setFilter] = useState('all'); // all, incorrect, review
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [userState, setUserState] = useState({
-    results: {}, // { questionId: isCorrect }
-    needsReview: {}, // { questionId: boolean }
-    attempts: {} // { questionId: count }
-  });
+  const [currentScreen, setCurrentScreen] = useState('menu'); // menu, quiz
+  const [filterMode, setFilterMode] = useState('all'); // all, incorrect, review
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [history, setHistory] = useState({}); // { id: boolean (isCorrect) }
+  const [reviews, setReviews] = useState({}); // { id: boolean (isReview) }
   const [selectedChoice, setSelectedChoice] = useState(null);
+  const [isAnswered, setIsAnswered] = useState(false);
 
-  // Persistence
+  // 初期ロード
   useEffect(() => {
-    const saved = localStorage.getItem('sm_consultant_quiz_2_8');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setUserState(parsed);
-      console.log("App Started: Loaded user progress", parsed);
-    }
+    const savedHistory = localStorage.getItem('finance_app_history');
+    const savedReviews = localStorage.getItem('finance_app_reviews');
+    if (savedHistory) setHistory(JSON.parse(savedHistory));
+    if (savedReviews) setReviews(JSON.parse(savedReviews));
+    console.log("App loaded. History:", savedHistory);
   }, []);
 
+  // 保存処理
   useEffect(() => {
-    localStorage.setItem('sm_consultant_quiz_2_8', JSON.stringify(userState));
-  }, [userState]);
+    localStorage.setItem('finance_app_history', JSON.stringify(history));
+    localStorage.setItem('finance_app_reviews', JSON.stringify(reviews));
+  }, [history, reviews]);
 
-  // Derived Quiz List
-  const quizList = useMemo(() => {
-    let list = QUESTIONS;
-    if (filter === 'incorrect') {
-      list = QUESTIONS.filter(q => userState.results[q.id] === false);
-    } else if (filter === 'review') {
-      list = QUESTIONS.filter(q => userState.needsReview[q.id] === true);
+  // 問題フィルタリング
+  const filteredQuestions = useMemo(() => {
+    if (filterMode === 'incorrect') {
+      return QUESTIONS.filter(q => history[q.id] === false);
     }
-    return list;
-  }, [filter, userState]);
+    if (filterMode === 'review') {
+      return QUESTIONS.filter(q => reviews[q.id]);
+    }
+    return QUESTIONS;
+  }, [filterMode, history, reviews]);
 
-  const currentQuestion = quizList[currentIdx];
-
-  // Actions
-  const handleStartQuiz = (newFilter) => {
-    setFilter(newFilter);
-    setCurrentIdx(0);
+  // クイズ開始
+  const startQuiz = (mode) => {
+    setFilterMode(mode);
+    setCurrentQuestionIndex(0);
     setSelectedChoice(null);
-    setView('quiz');
-    console.log(`Quiz Started: Mode=${newFilter}`);
+    setIsAnswered(false);
+    setCurrentScreen('quiz');
+    console.log(`Quiz started in ${mode} mode.`);
   };
 
-  const handleSelect = (choiceIdx) => {
-    if (view !== 'quiz') return;
-    setSelectedChoice(choiceIdx);
-    const isCorrect = choiceIdx === currentQuestion.answer;
+  // 回答処理
+  const handleAnswer = (choiceIndex) => {
+    if (isAnswered) return;
     
-    setUserState(prev => ({
+    setSelectedChoice(choiceIndex);
+    setIsAnswered(true);
+    
+    const currentQ = filteredQuestions[currentQuestionIndex];
+    const isCorrect = choiceIndex === currentQ.answer;
+    
+    setHistory(prev => ({
       ...prev,
-      results: { ...prev.results, [currentQuestion.id]: isCorrect },
-      attempts: { ...prev.attempts, [currentQuestion.id]: (prev.attempts[currentQuestion.id] || 0) + 1 }
+      [currentQ.id]: isCorrect
     }));
     
-    setView('explanation');
-    console.log(`Answered Q${currentQuestion.id}: Correct=${isCorrect}`);
+    console.log(`Question ${currentQ.id} answered. Correct: ${isCorrect}`);
   };
 
-  const handleNext = () => {
-    if (currentIdx < quizList.length - 1) {
-      setCurrentIdx(prev => prev + 1);
+  // 次の問題へ
+  const nextQuestion = () => {
+    if (currentQuestionIndex < filteredQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
       setSelectedChoice(null);
-      setView('quiz');
+      setIsAnswered(false);
     } else {
-      setView('dashboard');
+      setCurrentScreen('menu');
+      console.log("Quiz finished. Returning to menu.");
     }
   };
 
+  // 要復習トグル
   const toggleReview = (id) => {
-    setUserState(prev => ({
+    setReviews(prev => ({
       ...prev,
-      needsReview: { ...prev.needsReview, [id]: !prev.needsReview[id] }
+      [id]: !prev[id]
     }));
   };
 
-  // --- Renderers ---
+  // コンポーネント: メニュー画面
+  const MenuScreen = () => {
+    // 統計
+    const totalAnswered = Object.keys(history).length;
+    const totalCorrect = Object.values(history).filter(v => v).length;
+    const correctRate = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+    const incorrectCount = QUESTIONS.filter(q => history[q.id] === false).length;
+    const reviewCount = QUESTIONS.filter(q => reviews[q.id]).length;
 
-  const renderVisual = (type) => {
-    switch (type) {
-      case 'indifference_curves': return <IndifferenceCurves />;
-      case 'portfolio_curve': return <PortfolioCurve />;
-      case 'funding_hierarchy': return <FundingHierarchy />;
-      case 'risk_distribution': 
-        return (
-          <div className="w-full bg-slate-50 p-4 rounded-lg flex flex-col items-center">
-             <div className="w-48 h-32 border-l-2 border-b-2 border-slate-400 relative">
-                <div className="absolute left-0 bottom-0 w-full h-8 bg-blue-200 flex items-center justify-center text-[10px]">システマティック (市場リスク)</div>
-                <div className="absolute left-0 bottom-8 w-full h-16 bg-red-100 flex items-center justify-center text-[10px] border-b border-white">アンシステマティック (個別リスク)</div>
-                <div className="absolute bottom-[-20px] left-0 w-full text-center text-[10px]">← 銘柄数増加 →</div>
-             </div>
-          </div>
-        );
-      case 'correlation_graph':
-        return (
-          <div className="w-full h-40 border rounded flex items-center justify-center bg-white p-2">
-            <svg width="200" height="120" viewBox="0 0 200 120">
-              <path d="M20,20 L180,100" stroke="green" strokeWidth="2" strokeDasharray="4" />
-              <text x="182" y="105" fontSize="8">ρ=1 (直線)</text>
-              <path d="M20,20 Q60,60 180,100" fill="none" stroke="blue" strokeWidth="2" />
-              <text x="100" y="80" fontSize="8">ρ=0 (曲線)</text>
-              <polyline points="20,20 60,60 180,100" fill="none" stroke="red" strokeWidth="2" />
-              <text x="20" y="55" fontSize="8">ρ=-1 (折れ線)</text>
-            </svg>
-          </div>
-        );
-      case 'efficient_frontier':
-        return (
-          <div className="w-full h-40 bg-white border rounded flex flex-col items-center justify-center">
-             <div className="relative w-40 h-32 border-l border-b">
-                <path d="M40,20 Q10,60 40,110" fill="none" stroke="#ddd" strokeWidth="2" />
-                <path d="M40,20 Q100,30 140,50" fill="none" stroke="red" strokeWidth="3" />
-                <text x="60" y="25" fontSize="10" fill="red">効率的フロンティア</text>
-                <circle cx="80" cy="40" r="3" fill="red" /> <text x="85" y="42" fontSize="10">A</text>
-                <circle cx="80" cy="70" r="3" fill="blue" /> <text x="85" y="72" fontSize="10">B</text>
-             </div>
-          </div>
-        );
-      case 'risk_free_graph':
-        return (
-          <div className="w-full h-40 bg-white border rounded flex flex-col items-center justify-center">
-            <svg width="200" height="120" viewBox="0 0 200 120">
-              <line x1="20" y1="100" x2="180" y2="20" stroke="green" strokeWidth="2" />
-              <circle cx="20" cy="100" r="4" fill="blue" /> <text x="25" y="105" fontSize="10">国債 (RF)</text>
-              <circle cx="180" cy="20" r="4" fill="red" /> <text x="140" y="15" fontSize="10">株式X</text>
-              <text x="100" y="115" fontSize="10">標準偏差(リスク)</text>
-            </svg>
-          </div>
-        );
-      case 'market_portfolio_graph':
-        return (
-          <div className="w-full h-40 bg-white border rounded flex flex-col items-center justify-center">
-             <div className="relative w-40 h-32 border-l border-b">
-                <path d="M40,20 Q100,30 140,50" fill="none" stroke="red" strokeWidth="2" />
-                <line x1="0" y1="90" x2="140" y2="20" stroke="green" strokeWidth="2" />
-                <circle cx="85" cy="47" r="4" fill="red" />
-                <text x="90" y="45" fontSize="10">M (市場PF)</text>
-                <text x="10" y="10" fontSize="8" fill="green">資本市場線</text>
-             </div>
-          </div>
-        );
-      default: return null;
-    }
-  };
-
-  if (view === 'dashboard') {
     return (
-      <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <header className="text-center space-y-2">
-            <h1 className="text-2xl md:text-3xl font-extrabold text-blue-700 flex items-center justify-center gap-2">
-              <BookOpen className="w-8 h-8" /> 資本市場と資本コスト
-            </h1>
-            <p className="text-slate-500 text-sm">中小企業診断士 スマート問題集 2-8</p>
-          </header>
+      <div className="max-w-2xl mx-auto p-6 space-y-8 animate-in fade-in duration-500">
+        <header className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-blue-600">財務・会計 問題集</h1>
+          <p className="text-slate-500">資本市場と資本コスト (全16問)</p>
+        </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 text-center">
-              <p className="text-xs text-slate-400 font-bold uppercase">総正解率</p>
-              <p className="text-2xl font-black text-blue-600">
-                {Math.round((Object.values(userState.results).filter(Boolean).length / QUESTIONS.length) * 100)}%
-              </p>
-            </div>
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 text-center">
-              <p className="text-xs text-slate-400 font-bold uppercase">要復習</p>
-              <p className="text-2xl font-black text-orange-500">
-                {Object.values(userState.needsReview).filter(Boolean).length} 問
-              </p>
-            </div>
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 text-center">
-              <p className="text-xs text-slate-400 font-bold uppercase">完了済み</p>
-              <p className="text-2xl font-black text-slate-700">
-                {Object.keys(userState.results).length} / {QUESTIONS.length}
-              </p>
-            </div>
+        {/* 統計カード */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+            <div className="text-2xl font-bold text-blue-600">{correctRate}%</div>
+            <div className="text-xs text-slate-400">正答率</div>
           </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+            <div className="text-2xl font-bold text-red-500">{incorrectCount}</div>
+            <div className="text-xs text-slate-400">前回不正解</div>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+            <div className="text-2xl font-bold text-orange-500">{reviewCount}</div>
+            <div className="text-xs text-slate-400">要復習</div>
+          </div>
+        </div>
 
-          <section className="bg-white rounded-3xl shadow-md border border-slate-100 overflow-hidden">
-            <div className="p-4 bg-slate-100 border-b flex justify-between items-center">
-               <h2 className="font-bold flex items-center gap-2"><List className="w-4 h-4" /> 問題一覧</h2>
-               <span className="text-xs text-slate-500">前回の結果を確認</span>
-            </div>
-            <div className="divide-y max-h-96 overflow-y-auto">
-              {QUESTIONS.map((q, idx) => {
-                const isCorrect = userState.results[q.id];
-                const needsReview = userState.needsReview[q.id];
-                return (
-                  <div key={q.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono text-slate-400">#{String(q.id).padStart(2, '0')}</span>
-                      <span className="text-sm font-medium line-clamp-1">{q.title}</span>
-                      {needsReview && <span className="bg-orange-100 text-orange-600 text-[10px] px-1.5 py-0.5 rounded-full font-bold">要復習</span>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isCorrect === true && <CheckCircle className="w-5 h-5 text-green-500" />}
-                      {isCorrect === false && <XCircle className="w-5 h-5 text-red-500" />}
-                      {isCorrect === undefined && <div className="w-5 h-5 rounded-full border-2 border-slate-200" />}
-                    </div>
+        {/* スタートボタン */}
+        <div className="space-y-3">
+          <button 
+            onClick={() => startQuiz('all')}
+            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95"
+          >
+            <Play className="w-5 h-5" /> 全問スタート
+          </button>
+          <div className="grid grid-cols-2 gap-3">
+             <button 
+              onClick={() => startQuiz('incorrect')}
+              disabled={incorrectCount === 0}
+              className="py-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" /> 不正解のみ ({incorrectCount})
+            </button>
+            <button 
+              onClick={() => startQuiz('review')}
+              disabled={reviewCount === 0}
+              className="py-3 bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <List className="w-4 h-4" /> 要復習のみ ({reviewCount})
+            </button>
+          </div>
+        </div>
+
+        {/* 問題一覧 */}
+        <div className="bg-white rounded-2xl shadow border border-slate-100 overflow-hidden">
+          <div className="p-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-600 flex items-center gap-2">
+            <List className="w-5 h-5" /> 問題一覧・履歴
+          </div>
+          <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+            {QUESTIONS.map((q) => {
+              const isCorrect = history[q.id];
+              const isReview = reviews[q.id];
+              return (
+                <div key={q.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                  <div className="flex-1">
+                    <div className="text-xs text-slate-400 mb-1">Q{q.id}</div>
+                    <div className="text-sm font-medium text-slate-700">{q.title}</div>
                   </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <button 
-              onClick={() => handleStartQuiz('all')}
-              className="flex items-center justify-center gap-2 p-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200"
-            >
-              <Play className="w-5 h-5" /> 全て解く
-            </button>
-            <button 
-              onClick={() => handleStartQuiz('incorrect')}
-              disabled={!QUESTIONS.some(q => userState.results[q.id] === false)}
-              className="flex items-center justify-center gap-2 p-4 bg-red-500 text-white rounded-2xl font-bold hover:bg-red-600 active:scale-95 transition-all shadow-lg shadow-red-100 disabled:opacity-50 disabled:grayscale"
-            >
-              <RefreshCw className="w-5 h-5" /> 不正解のみ
-            </button>
-            <button 
-              onClick={() => handleStartQuiz('review')}
-              disabled={!Object.values(userState.needsReview).some(Boolean)}
-              className="flex items-center justify-center gap-2 p-4 bg-orange-500 text-white rounded-2xl font-bold hover:bg-orange-600 active:scale-95 transition-all shadow-lg shadow-orange-100 disabled:opacity-50 disabled:grayscale"
-            >
-              <AlertCircle className="w-5 h-5" /> 要復習のみ
-            </button>
+                  <div className="flex items-center gap-3">
+                    {isReview && <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs rounded-full font-bold">要復習</span>}
+                    {isCorrect === true && <CheckCircle className="w-5 h-5 text-green-500" />}
+                    {isCorrect === false && <XCircle className="w-5 h-5 text-red-500" />}
+                    {isCorrect === undefined && <div className="w-5 h-5 border-2 border-slate-200 rounded-full"></div>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
     );
-  }
+  };
 
-  return (
-    <div className="min-h-screen bg-white md:bg-slate-50 p-0 md:p-8 font-sans">
-      <div className="max-w-3xl mx-auto bg-white min-h-screen md:min-h-0 md:rounded-3xl md:shadow-2xl md:border border-slate-200 overflow-hidden flex flex-col">
-        
-        {/* Header */}
-        <div className="p-4 border-b flex items-center justify-between bg-white sticky top-0 z-10">
-          <button onClick={() => setView('dashboard')} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <ArrowLeft className="w-6 h-6 text-slate-600" />
+  // コンポーネント: クイズ画面
+  const QuizScreen = () => {
+    const question = filteredQuestions[currentQuestionIndex];
+
+    if (!question) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen space-y-4">
+          <div className="text-xl font-bold text-slate-600">該当する問題がありません</div>
+          <button onClick={() => setCurrentScreen('menu')} className="text-blue-500 underline">メニューに戻る</button>
+        </div>
+      );
+    }
+
+    const isCorrect = selectedChoice === question.answer;
+
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        {/* ヘッダー */}
+        <div className="bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+          <button onClick={() => setCurrentScreen('menu')} className="text-slate-500 hover:text-slate-800">
+            <ArrowLeft className="w-6 h-6" />
           </button>
-          <div className="text-center">
-             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Progress</p>
-             <p className="text-xs font-mono text-slate-500">{currentIdx + 1} / {quizList.length}</p>
+          <div className="text-sm font-bold text-slate-600">
+             Q{question.id} ({currentQuestionIndex + 1}/{filteredQuestions.length})
           </div>
-          <div className="w-10" />
+          <div className="w-6"></div> {/* Spacer */}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
-          {currentQuestion ? (
-            <>
-              <div className="space-y-4">
-                <h3 className="text-lg md:text-xl font-black text-slate-800 leading-tight">
-                  {currentQuestion.title}
-                </h3>
-                <div className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                  {currentQuestion.text}
-                </div>
-              </div>
-
-              {/* Table rendering if exists */}
-              {currentQuestion.hasTable && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm border-collapse border border-slate-300">
-                    <thead className="bg-slate-100">
-                      <tr>
-                        <th className="border border-slate-300 p-2 text-center">投資収益率</th>
-                        <th className="border border-slate-300 p-2 text-center">確率</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentQuestion.tableData?.map((row, i) => (
-                        <tr key={i}>
-                          <td className="border border-slate-300 p-2 text-center font-mono">{row.rate}</td>
-                          <td className="border border-slate-300 p-2 text-center font-mono">{row.prob}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Diagrams */}
-              {currentQuestion.customVisual && renderVisual(currentQuestion.customVisual)}
-
-              {/* Choices */}
-              <div className="grid grid-cols-1 gap-3 pt-4">
-                {currentQuestion.choices?.map((choice, i) => {
-                  const isSelected = selectedChoice === i;
-                  const isCorrect = i === currentQuestion.answer;
-                  const showResult = view === 'explanation';
-
-                  return (
-                    <button
-                      key={i}
-                      disabled={showResult}
-                      onClick={() => handleSelect(i)}
-                      className={`
-                        w-full p-4 text-left rounded-2xl border-2 transition-all flex items-start gap-3
-                        ${!showResult ? 'border-slate-200 hover:border-blue-400 hover:bg-blue-50 active:scale-[0.98]' : ''}
-                        ${showResult && isCorrect ? 'border-green-500 bg-green-50' : ''}
-                        ${showResult && isSelected && !isCorrect ? 'border-red-500 bg-red-50' : ''}
-                        ${showResult && !isSelected && !isCorrect ? 'opacity-40 border-slate-100' : ''}
-                      `}
-                    >
-                      <span className={`
-                        w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold
-                        ${!showResult ? 'bg-slate-100 text-slate-500' : ''}
-                        ${showResult && isCorrect ? 'bg-green-500 text-white' : ''}
-                        ${showResult && isSelected && !isCorrect ? 'bg-red-500 text-white' : ''}
-                      `}>
-                        {['ア', 'イ', 'ウ', 'エ', 'オ'][i]}
-                      </span>
-                      <span className="text-sm md:text-base font-medium">{choice}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Explanation Area */}
-              {view === 'explanation' && (
-                <div className="mt-8 p-6 bg-slate-50 rounded-3xl border border-slate-200 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-black text-blue-800 flex items-center gap-2">
-                      <Info className="w-5 h-5" /> 解説
-                    </h4>
-                    <label className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border cursor-pointer hover:bg-slate-50 transition-colors">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded text-orange-500"
-                        checked={userState.needsReview[currentQuestion.id] || false}
-                        onChange={() => toggleReview(currentQuestion.id)}
-                      />
-                      <span className="text-xs font-bold text-slate-600">要復習にチェック</span>
-                    </label>
-                  </div>
-                  
-                  <div className="text-sm md:text-base text-slate-700 leading-relaxed whitespace-pre-wrap italic">
-                    {currentQuestion.explanation}
-                  </div>
-
-                  {currentQuestion.mathInfo && (
-                    <div className="p-3 bg-white rounded-xl border border-slate-200 font-mono text-xs text-blue-600 whitespace-pre-wrap">
-                      {currentQuestion.mathInfo}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleNext}
-                    className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-slate-900 transition-all active:scale-95"
-                  >
-                    {currentIdx < quizList.length - 1 ? '次の問題へ' : '結果画面へ戻る'} <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
-               <div className="p-6 bg-blue-100 rounded-full">
-                  <Check className="w-12 h-12 text-blue-600" />
+        <div className="flex-1 max-w-3xl mx-auto w-full p-4 md:p-6 pb-24">
+          
+          {/* 問題文 */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+            <h2 className="text-lg font-bold text-blue-900 mb-2">{question.title}</h2>
+            <div className="text-slate-700 whitespace-pre-wrap leading-relaxed">
+              {question.question}
+            </div>
+            {/* 図表コンポーネントがあれば表示 */}
+            {question.extraComponent && (
+               <div className="mt-6 border-t pt-4">
+                 {question.extraComponent}
                </div>
-               <h3 className="text-xl font-bold">対象の問題はありません</h3>
-               <button onClick={() => setView('dashboard')} className="text-blue-600 font-bold underline">ダッシュボードへ戻る</button>
+            )}
+          </div>
+
+          {/* 選択肢 */}
+          <div className="space-y-3">
+            {question.choices.map((choice, idx) => {
+              let btnClass = "w-full p-4 text-left rounded-xl border-2 transition-all duration-200 ";
+              
+              if (!isAnswered) {
+                btnClass += "bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-700";
+              } else {
+                if (idx === question.answer) {
+                  btnClass += "bg-green-50 border-green-500 text-green-800 font-bold";
+                } else if (idx === selectedChoice) {
+                  btnClass += "bg-red-50 border-red-500 text-red-800";
+                } else {
+                  btnClass += "bg-slate-50 border-slate-100 text-slate-400";
+                }
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleAnswer(idx)}
+                  disabled={isAnswered}
+                  className={btnClass}
+                >
+                  <div className="flex items-center gap-3">
+                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border ${isAnswered && idx === question.answer ? 'bg-green-500 text-white border-green-500' : 'bg-white border-slate-300 text-slate-500'}`}>
+                        {['ア','イ','ウ','エ','オ'][idx]}
+                     </div>
+                     <span>{choice}</span>
+                     {isAnswered && idx === question.answer && <Check className="w-5 h-5 ml-auto text-green-600" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 解説エリア */}
+          {isAnswered && (
+            <div className="mt-8 animate-in slide-in-from-bottom-4 fade-in duration-300">
+              <div className={`p-6 rounded-2xl border ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} mb-4`}>
+                <div className="flex items-center gap-3 mb-2">
+                  {isCorrect ? <CheckCircle className="w-8 h-8 text-green-600" /> : <XCircle className="w-8 h-8 text-red-600" />}
+                  <span className={`text-xl font-bold ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>
+                    {isCorrect ? '正解！' : '不正解...'}
+                  </span>
+                </div>
+                <div className="text-slate-700 leading-relaxed whitespace-pre-wrap mt-2">
+                  <span className="font-bold block mb-1 text-slate-900">【解説】</span>
+                  {question.explanation}
+                </div>
+              </div>
+
+              {/* アクションバー */}
+              <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-lg border border-slate-100 sticky bottom-4">
+                 <label className="flex items-center gap-2 cursor-pointer select-none px-3 py-2 rounded-lg hover:bg-slate-50 transition">
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 text-orange-500 rounded focus:ring-orange-500"
+                      checked={!!reviews[question.id]} 
+                      onChange={() => toggleReview(question.id)}
+                    />
+                    <span className="text-sm font-bold text-slate-600">要復習にする</span>
+                 </label>
+                 
+                 <button 
+                  onClick={nextQuestion}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold shadow hover:bg-blue-700 flex items-center gap-2 transition"
+                 >
+                   {currentQuestionIndex < filteredQuestions.length - 1 ? '次の問題へ' : '結果を見る'}
+                   <ChevronRight className="w-5 h-5" />
+                 </button>
+              </div>
             </div>
           )}
         </div>
       </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+      {currentScreen === 'menu' ? <MenuScreen /> : <QuizScreen />}
     </div>
   );
 }
